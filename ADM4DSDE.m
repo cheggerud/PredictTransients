@@ -1,4 +1,4 @@
-function [tsd,xsd]=ADM4DSDE(tend,dt,ICOND,al)
+function [tsd,xsd]=ADM4DSDE(tend,dt,ICOND)
 % clc; 
 % clear all;
 % 
@@ -47,14 +47,7 @@ b=1/H2;
 c=y2*b;
 d=y3*mu22*b/mu11;
 %  alpha=S1in/H1*D/mu11;
-switch nargin
-    case 4
-        alpha=al;
-    otherwise
-        alpha=6;
-end
- alpha
- 
+ alpha=4;
  beta=y1*a/c;
 % sigma1=k1/mu11;
 sigma1=.1;
@@ -63,12 +56,7 @@ sigma2=k2/D;
     epsilon= 3.00e-02;
 % omega=mu22/D;
 omega=4;
-epsilon=0.000125;
-% 
-beta=0.3357;
-sigma1=0.1;
-sigma2=0.66667;
-omega=4.266;
+
 
 % 
 % alpha

@@ -27,19 +27,24 @@ switch nargin
     otherwise
         alpha=6;
 end
-alpha
- beta=y1*a/c
+ alpha
+ beta=y1*a/c;
 % sigma1=k1/mu11;
-sigma1=.1
-sigma2=k2/D
+sigma1=.1;
+sigma2=k2/D;
 %      epsilon=D/mu11
-%     epsilon= 3.00e-02;
-epsilon=0.000125;
+    epsilon= 3.00e-02;
+% epsilon=0
+% omega=mu22/D;
+omega=4;
+
+
 % 
-% beta=0.3357;
-% sigma1=0.1;
-% sigma2=0.66667;
-omega=4.266;
+% alpha
+%   alpha=.001;
+% sigma1
+% sigma1=1.1;
+ 
  if (sigma1>1)||(ICOND(4)<alpha/beta)
      fprintf('error in sigma1 or beta alpha y0 values')
      sigma1

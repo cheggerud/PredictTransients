@@ -28,7 +28,7 @@ df=@(t,x) [D*(S1in-x(1))-y1*mu11*x(1)*x(3)/(H1+x(1));
 
 
 %% Find the equilibrium Values
-sig=5;
+sig=.1;
 %time step of the SDE
 TEND=40;% end time of the SDE
  ICOND= [.8 .464 .03, .675];
@@ -39,9 +39,8 @@ opts = odeset('RelTol',1e-15,'AbsTol',1e-15);
 % [t,x]=ADM4DSDEFULL(TEND,0.01,ICOND,0);
    [tsd,xsd]=ADM4DSDEFULL(TEND,0.01,ICOND,sig);% SDE simulation ensuring jumps won't go into the negative. If they do, then the bacteria stay at zero. 
 
-figure(3)
-plot(t,x(:,1))
-hold on
+ 
+
 eqs=fsolve(@(x) df(0,x),[1 1 17 672]);
 eqs=fsolve(@(x) df(0,x),eqs);% eqs now gives the equilibrium value. 
 
@@ -49,19 +48,18 @@ eqs=fsolve(@(x) df(0,x),eqs);% eqs now gives the equilibrium value.
 
 
 %% generate SDE timeseries:
-numrels= 100;
+numrels= 10;
 dt=0.01;
- sigs=2*logspace(-4,0,10);
- % sigs=[0.1];
+   sigs=2*logspace(-4,0,10);
+   
 %this is the vector to play with the variance: % max sig should 5. Anything higher then no transients appear. i.e. more than 10% of sims give all transient dynamics. 
-  numhist=[2,5,10,20];% if using historical data, how many points to use. 
+   numhist=[2,5,10,20];% if using historical data, how many points to use. 
 
- numtsteps=[5,20,50,100];%integer;
-% numhist=[2];
-% numtsteps=[5];
+   numtsteps=[5,20,50,100];%integer;
+ 
 timestepbetweendata=numtsteps*dt;
 
- etols=logspace(-3,1,15);
+ etols=logspace(-2,2,15);
  etolsl=length(etols);
 
 sigl=length(sigs);
@@ -193,6 +191,7 @@ eqdif=abs(S1-eqs(1));
             for his=1:hisl
                 
                 % clear err
+                 relerr=nan*ones(length(tsdat),1);
                  err=nan*ones(length(tsdat),1);
                  trainhist=numhist(his);
                    for i=3:length(s1dat)-1% this is now the SMAP loop.
@@ -213,42 +212,26 @@ eqdif=abs(S1-eqs(1));
                     C=A\B';
                     proj=[s1dat(i),s2dat(i),x1dat(i),x2dat(i)]*C;
                      %now to plot the predictions they start at tsd(1:gap:end), then tsd(numhist:end);
-                    err(i)=abs(proj-s1dat(i+1));
-                     % relerr=abs((proj-s1dat(i+1))/s1dat(i+1));
+                     err(i)=abs(proj-s1dat(i+1));
+                      relerr(i)=abs((proj-s1dat(i+1))/s1dat(i+1));
                        % error(s,j,gap,his,(i)*numtsteps(gap))=err(i);
                     % relerror(s,n,gap,his,(i)*numtsteps(gap))=relerr;
                    end
-                   %do something with the error curve now:
-                     smootherror=smoothdata(err,'gaussian',[4,0]);
-                    err=smootherror;
+    smootherror=smoothdata(relerr,'gaussian',[4,0]);
+                    relerr=smootherror;
+                 
 
-                   % 
+                   locmaxerr=islocalmax(relerr);
                    for e=1:etolsl 
                        
-                       for i=1:length(err)
-                           if err(i)<etols(e) %>for relative error
+                       for i=1:length(relerr)
+                           if relerr(i)>etols(e)&locmaxerr(i)
                                trendcheck=tsdat(i);
                              
                                if trendcheck>5 % the transient must be at least 5 time units long, otherwise the low error comes from the luck of having close initial conditions. 
                              tenderror(s,j,gap,his,e)=trendcheck;
 
-                               % if abs(trendcheck-tranend(j,s))>15&&gap==gapl&&his==hisl&&e==9&&s==5
-                               %     figure(69)
-                               %     pp=plot(tsdat,err)
-                               %     hold on
-                               %     plot(tranend(j,s),0,'o','MarkerSize',20,'Color',pp.Color)
-                               %     plot(trendcheck,err(i),'*','MarkerSize',10,'Color',pp.Color)
-                               % end
-
-                               % if s==1&&his==1&&gap==4&&e==12
-                               %       figure(2)
-                               %       pp=plot(tsdat,err);
-                               %       hold on
-                               %       plot(trendcheck,err(i),'*','MarkerSize',10,'Color',pp.Color);
-                               %       hold on
-                               %       plot(tranend(j,s),0,'o','MarkerSize',20,'Color',pp.Color);
-                               %       hold on
-                               %      end
+                             
                                 break;
                                end
                            end
@@ -257,18 +240,7 @@ eqdif=abs(S1-eqs(1));
 
 
 
-                       %  sp=reshape(error(s,j,gap,his,:),[1],[]);                
-                       % for i=1:length(sp)
-                       %      if sp(i)<etols(e)
-                       %        trendcheck=tsd(i);
-                       %      if trendcheck>4 % the transient must be at least 5 time units long, otherwise the low error comes from the luck of having close initial conditions. 
-                       %       tenderroro(s,j,gap,his,e)=trendcheck;
-                       %          break;
-                       %      end
-                       % 
-                       % 
-                       %   end
-                       % end
+                       
                    end
 
             end
@@ -339,21 +311,19 @@ r=1-sum((xxs-yys).^2)./sum((yys-ybar).^2);
     end
 end
 %% PLot the corr as a heat maps:
- figure(104) % R^2 plot
+ figure(104)% R^2 plot
 
         clf
          t0=tiledlayout('flow')
    
-     figure(106)% correlation plot
+     figure(106) % corr corref plot
      
         clf
        t1=tiledlayout('flow')
-    % t1=tiledlayout('flow')
-    %  figure(102)
-    %     clf
-    % t2=tiledlayout('flow')
+    
     correrror(isnan(correrror))=0;
- rsq(isnan(rsq))=0;
+     rsq(isnan(rsq))=0;
+
 for his=1:hisl
 
     for gap=1:gapl
@@ -365,20 +335,15 @@ pcolor(etols,sigs,ebysig);
 
  set(gca, 'XScale', 'log');
  set(gca, 'YScale', 'log');
- xticks([1e-3,1e0])
-  yticks([1e-4,1e0])
+ xticks([1e-2,1e1])
+  yticks([1e-3,1e0])
       % shading interp
 title("$h=$"+numhist(his)+", $\Delta t=$"+timestepbetweendata(gap),'Interpreter','latex','FontSize',12);
  caxis manual
  caxis([0 1]);
 hold on
 
-% figure(102)
-% nexttile
-%  [M,I]=max(ebysig,[],"all");
-%  [X,Y]=ind2sub(size(ebysig),I);
-% plot(tranend(:,X),tenderror(X,:,gap,his,Y),'o')
-% hold on
+
 
 ebysig=reshape(correrror(:,gap,his,:),[sigl],[length(etols)]);
 figure(106)
@@ -399,9 +364,9 @@ hold on
     end
 end
 
-xlabel(t0,'Error threshold, $\delta_a$','Interpreter','latex','FontSize',14)
+xlabel(t0,'Error threshold, $\delta_r$','Interpreter','latex','FontSize',14)
 ylabel(t0,'Noise level, $\sigma$','Interpreter','latex','FontSize',14)
-xlabel(t1,'Error threshold, $\delta_a$','Interpreter','latex','FontSize',14)
+xlabel(t1,'Error threshold, $\delta_r$','Interpreter','latex','FontSize',14)
 ylabel(t1,'Noise level, $\sigma$','Interpreter','latex','FontSize',14)
 
 cbh = colorbar(h(end)); 
@@ -414,31 +379,8 @@ cbh = colorbar(h1(end));
 % all tiles, 
 cbh.Layout.Tile = 'east'; 
 
-%% Plot the corr plots below: Is seems fitting?
 
 
-
-
-% e=20;
-%    for s=1:sigl
-%        figure(s*100)
-%         clf
-%     tiledlayout('flow')
-% for gap=1:gapl
-%     for his=1:hisl
-%         nexttile
-%         for n=1:numrels
-%             plot(tranend(n,s),tenderror(s,n,gap,his,e),'.','markersize',10)
-%             hold on
-%         end
-%     end
-% end
-% 
-% 
-%    end
-% 
-% 
-% 
 
 
 %% look at proportion of predictions made. i.e top left should be blue blue. 
@@ -452,7 +394,7 @@ succs(isnan(succs))=0;
 
 succ=sum(succs,2)/numrels;
 
- figure(1092)% success plots
+ figure(1092) % plots prop of successes. 
         clf
     t3=tiledlayout('flow')
     
@@ -464,8 +406,8 @@ for his=1:hisl
 h=pcolor(etols,sigs,succplot);
 set(gca, 'XScale', 'log');
   set(gca, 'YScale', 'log');
-   xticks([1e-3,1e0])
-   yticks([1e-4,1e0])
+   xticks([1e-2,1e1])
+  yticks([1e-3,1e0])
   title("$h=$"+numhist(his)+", $\Delta t=$"+timestepbetweendata(gap),'Interpreter','latex','FontSize',12);
      %shading interp
 caxis manual
@@ -478,7 +420,7 @@ hold on
 end
 
 
-xlabel(t3,'Error threshold, $\delta_a$','Interpreter','latex','FontSize',14)
+xlabel(t3,'Error threshold, $\delta_r$','Interpreter','latex','FontSize',14)
 ylabel(t3,'Noise level, $\sigma$','Interpreter','latex','FontSize',14)
 cbh = colorbar(h4(end)); 
 % To position the colorbar as a global colorbar representing
@@ -486,11 +428,11 @@ cbh = colorbar(h4(end));
 cbh.Layout.Tile = 'east'; 
 
 
-%% predict the transient end for first differences in error
-su=succ<0;
+%% plot the best correlation plots
+su=succ<0.6;
 rstest=rsq;
 rstest(su)=0;
-figure(102)
+figure(102) % plots scatter corr plots
 clf
  t4=tiledlayout('flow')
 for his=1:hisl
@@ -499,14 +441,14 @@ for his=1:hisl
         
         ebysig=reshape(rstest(:,gap,his,:),[sigl],[length(etols)]);
 
-figure(102) % scatter plot
+figure(102)
 nexttile
  [M,I]=max(ebysig,[],"all");
  [X,Y]=ind2sub(size(ebysig),I);
 plot(tranend(:,X),tenderror(X,:,gap,his,Y),'o','Markersize',4)
 hold on
 plot(t,t,'k')
- title("$h=$"+numhist(his)+", $\Delta t=$"+timestepbetweendata(gap)+",$R^2=$"+num2str(M, 2),'Interpreter','latex','FontSize',10);
+ title("$h=$"+numhist(his)+", $\Delta t=$"+timestepbetweendata(gap)+",$R^2=$"+num2str(M, 3),'Interpreter','latex','FontSize',10);
 
 
     end

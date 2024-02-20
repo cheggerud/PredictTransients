@@ -51,7 +51,7 @@ eqs=fsolve(@(x) df(0,x),eqs);% eqs now gives the equilibrium value.
 
 
 %% generate SDE timeseries:
-numrels= 10;
+numrels= 100;
 dt=0.01;
  sigs=5*logspace(-4,0,10);
  % sigs=[0.1];
@@ -369,11 +369,11 @@ r=1-sum((xxs-yys).^2)./sum((yys-ybar).^2);
     end
 end
 %% PLot the corr as a heat maps:
- figure(102)
+ figure(102) % creates the R^2 plot
         clf
        
     t0=tiledlayout('flow')
-     figure(104)
+     figure(104) %creates correlation coefiicitent plot
         clf
     t1=tiledlayout('flow')
     correrror(isnan(correrror))=0;
@@ -451,7 +451,7 @@ succs(isnan(succs))=0;
 
 succ=sum(succs,2)/numrels;
 
- figure(1092)
+ figure(1092)% create prop of success plot
         clf
     t4=tiledlayout('flow');
     
@@ -484,7 +484,7 @@ ylabel(t4,'Noise level, $\sigma$','Interpreter','latex','FontSize',14)
 su=succ<0.50;
 rstest=rsq;
 rstest(su)=0;
-figure(107)
+figure(107)% creates sample correlation plots. 
 clf
  t4=tiledlayout('flow')
 
